@@ -9,8 +9,10 @@ import io.nuls.core.crypto.AESEncrypt;
 import io.nuls.core.crypto.ECKey;
 import io.nuls.core.crypto.HexUtil;
 import io.nuls.core.exception.CryptoException;
+import io.nuls.core.exception.NulsException;
 import io.nuls.core.exception.NulsRuntimeException;
 import io.nuls.core.model.ObjectUtils;
+import io.nuls.rpc.vo.Account;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -21,18 +23,11 @@ import java.util.List;
 /**
  * @Author: zhoulijun
  * @Time: 2019-06-20 17:48
+ * @Description: 功能描述
  */
 public class Utils {
 
-    /**
-     * 对交易进行签名，并将签名传入交易中
-     * @param transaction
-     * @param priKey
-     * @param pubKey
-     * @param password
-     * @return
-     * @throws IOException
-     */
+
     public static Transaction signTransaction(Transaction transaction, String priKey,String pubKey, String password) throws IOException {
         TransactionSignature transactionSignature = new TransactionSignature();
         List<P2PHKSignature> p2PHKSignatures = new ArrayList<>();

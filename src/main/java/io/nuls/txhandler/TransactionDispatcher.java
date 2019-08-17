@@ -33,13 +33,21 @@ public final class TransactionDispatcher extends BaseCmd {
     }
 
     @Autowired
-    TransactionProcessor transactionProcessor;
+    RegisteredEntityProcessor registeredEntityProcessor;
 
-    /**
-     * 交易验证回调函数
-     * @param params
-     * @return
-     */
+    @Autowired
+    CopyrightContentProcessor copyrightContentProcessor;
+
+
+    private TransactionProcessor getProcessor(int txType) {
+        if (txType == registeredEntityProcessor.getType()) {
+            return registeredEntityProcessor;
+        }
+        if (txType == copyrightContentProcessor.getType()) {
+            return copyrightContentProcessor;
+        }
+        throw new RuntimeException("不支持的txType：" + txType);
+    }
     @CmdAnnotation(cmd = BaseConstant.TX_VALIDATOR, version = 1.0, description = "")
     @Parameter(parameterName = "chainId", parameterType = "int")
     @Parameter(parameterName = "txList", parameterType = "List")
@@ -48,7 +56,7 @@ public final class TransactionDispatcher extends BaseCmd {
         List<String> finalInvalidTxs = new ArrayList<>();
         Map<String, List<String>> resultMap = new HashMap<>(2);
         handle(params,(chainId,tx,blockHeader)-> {
-            if(!transactionProcessor.validate(chainId, tx, blockHeader)){
+            if(!getProcessor(tx.getType()).validate(chainId, tx, blockHeader)){
                 finalInvalidTxs.add(tx.getHash().toHex());
             }
             return true;
@@ -57,32 +65,20 @@ public final class TransactionDispatcher extends BaseCmd {
         return success(resultMap);
     }
 
-
-    /**
-     * 保存交易数据回调函数
-     * @param params
-     * @return
-     */
     @CmdAnnotation(cmd = BaseConstant.TX_COMMIT, version = 1.0, description = "")
     @Parameter(parameterName = "chainId", parameterType = "int")
     @Parameter(parameterName = "txList", parameterType = "List")
     @Parameter(parameterName = "blockHeader", parameterType = "String")
     public Response txCommit(Map params) {
-        return handle(params,(chainId,tx,blockHeader)-> transactionProcessor.commit(chainId,tx,blockHeader));
+        return handle(params,(chainId,tx,blockHeader)-> getProcessor(tx.getType()).commit(chainId,tx,blockHeader));
     }
 
-    /**
-     * 回滚交易数据回调函数
-     *
-     * @param params
-     * @return
-     */
     @CmdAnnotation(cmd = BaseConstant.TX_ROLLBACK, version = 1.0, description = "")
     @Parameter(parameterName = "chainId", parameterType = "int")
     @Parameter(parameterName = "txList", parameterType = "List")
     @Parameter(parameterName = "blockHeader", parameterType = "String")
     public Response txRollback(Map params) {
-        return handle(params,(chainId,tx,blockHeader)-> transactionProcessor.rollback(chainId,tx,blockHeader));
+        return handle(params,(chainId,tx,blockHeader)-> getProcessor(tx.getType()).rollback(chainId,tx,blockHeader));
     }
 
     private Response handle(Map params, Handler handler){
